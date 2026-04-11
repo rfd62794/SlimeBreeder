@@ -1,3 +1,4 @@
+import { useCallback } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { IncubationProgress } from './IncubationProgress'
 import type { HatchTankSlot } from '../db/db'
@@ -15,12 +16,17 @@ export function HatchButton() {
   // Show the first active hatch tank in CHAMBER (breed tanks shown in MUTATE)
   const activeHatchIndex = tanks.findIndex((t) => t !== null && t.type === 'hatch')
 
+  const handleHatchComplete = useCallback(
+    () => resolveHatch(activeHatchIndex),
+    [resolveHatch, activeHatchIndex],
+  )
+
   if (activeHatchIndex !== -1) {
     const slot = tanks[activeHatchIndex] as HatchTankSlot
     return (
       <IncubationProgress
         startedAt={slot.startedAt}
-        onComplete={() => resolveHatch(activeHatchIndex)}
+        onComplete={handleHatchComplete}
       />
     )
   }
