@@ -3,6 +3,7 @@ import { db } from '../db/db'
 import { generateSlime } from '../utils/slimeGenerator'
 import type { Slime, DisplaySlot } from '../types'
 import type { TankSlot } from '../db/db'
+import { breedSlimes } from '../utils/breedSlimes'
 import {
   PEN_UPGRADE_COST,
   HATCH_DURATION_MS,
@@ -138,9 +139,6 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!slot || slot.type !== 'breed') return // idempotent guard
     const host = state.slimes.find((s) => s.id === slot.hostId)
     if (!host) return // host not found — guard against corrupt state
-    // breedSlimes imported here to avoid circular dependency during testing
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { breedSlimes } = require('../utils/breedSlimes') as typeof import('../utils/breedSlimes')
     const offspring = breedSlimes(host, slot.donorSnapshot)
     const newTanks = state.tanks.map((t, i): TankSlot | null => (i === tankIndex ? null : t))
     const next = {
