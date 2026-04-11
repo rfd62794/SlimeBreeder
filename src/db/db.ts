@@ -26,6 +26,8 @@ export interface BreedTankSlot {
   type: 'breed'
   startedAt: number
   hostId: string
+  hostSnapshot: PersistedSlime   // full host genetics captured at startBreed time;
+                                  // host stays in pen but may be sold/displayed before resolve
   donorSnapshot: PersistedSlime  // full donor genetics captured at startBreed time;
                                   // donor is removed from pen immediately, so this snapshot
                                   // is the only source of truth at resolveBreed time

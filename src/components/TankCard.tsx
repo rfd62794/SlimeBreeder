@@ -59,12 +59,16 @@ export function TankCard({ tankIndex, onBreedClick }: Props) {
     <div className="bg-surface-container-high border border-outline-variant/20">
       <div className="flex items-center gap-3 p-3 pb-0">
         <SlimeVisual
+          color={breedSlot.hostSnapshot?.color as SlimeColor ?? breedSlot.donorSnapshot.color as SlimeColor}
+          shape={breedSlot.hostSnapshot?.shape as SlimeShape ?? breedSlot.donorSnapshot.shape as SlimeShape}
+          size={32}
+        />
+        <span className="text-on-surface-variant text-xs font-headline">×</span>
+        <SlimeVisual
           color={breedSlot.donorSnapshot.color as SlimeColor}
           shape={breedSlot.donorSnapshot.shape as SlimeShape}
           size={32}
         />
-        <span className="text-on-surface-variant text-xs font-headline">×</span>
-        <HostVisual hostId={breedSlot.hostId} />
         <span className="ml-auto text-[10px] font-label text-on-surface-variant uppercase tracking-widest">
           TANK_{tankIndex + 1}
         </span>
@@ -76,11 +80,4 @@ export function TankCard({ tankIndex, onBreedClick }: Props) {
       />
     </div>
   )
-}
-
-/** Looks up the host slime by id from the live store for its visual. */
-function HostVisual({ hostId }: { hostId: string }) {
-  const host = useGameStore((s) => s.slimes.find((sl) => sl.id === hostId))
-  if (!host) return null
-  return <SlimeVisual color={host.color} shape={host.shape} size={32} />
 }

@@ -115,18 +115,18 @@ export const useGameStore = create<GameState>((set, get) => ({
     if (!host || !donor) return
     const idx = tanks.findIndex((t) => t === null)
     if (idx === -1) return // no free tank
-    const donorSnapshot = {
-      id: donor.id,
-      color: donor.color,
-      shape: donor.shape,
-      colorTier: donor.colorTier,
-      shapeTier: donor.shapeTier,
-      variance: donor.variance,
-      actualValue: donor.actualValue,
-      createdAt: donor.createdAt,
-    }
+    const snapshot = (s: Slime) => ({
+      id: s.id,
+      color: s.color,
+      shape: s.shape,
+      colorTier: s.colorTier,
+      shapeTier: s.shapeTier,
+      variance: s.variance,
+      actualValue: s.actualValue,
+      createdAt: s.createdAt,
+    })
     const newTanks = tanks.map((t, i): TankSlot | null =>
-      i === idx ? { type: 'breed', startedAt: Date.now(), hostId, donorSnapshot } : t,
+      i === idx ? { type: 'breed', startedAt: Date.now(), hostId, hostSnapshot: snapshot(host), donorSnapshot: snapshot(donor) } : t,
     )
     const next = {
       ...get(),
@@ -141,9 +141,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     const state = get()
     const slot = state.tanks[tankIndex]
     if (!slot || slot.type !== 'breed') return // idempotent guard
-    const host = state.slimes.find((s) => s.id === slot.hostId)
-    if (!host) return // host not found — guard against corrupt state
-    const offspring = breedSlimes(host, slot.donorSnapshot)
+    // Use snapshots captured at startBreed time — host may have been sold/displayed since
+    const hostForBreed: Slime = {
+      ...slot.hostSnapshot,
+      color: slot.hostSnapshot.color as import('../types').SlimeColor,
+      shape: slot.hostSnapshot.shape as import('../types').SlimeShape,
+    }
+    const offspring = breedSlimes(hostForBreed, slot.donorSnapshot)
     const newTanks = state.tanks.map((t, i): TankSlot | null => (i === tankIndex ? null : t))
     const next = {
       ...state,

@@ -267,7 +267,7 @@ describe('loadGame — breed', () => {
     vi.mocked(db.gameState.get).mockResolvedValueOnce({
       id: 1, gold: 50, penCapacity: 5,
       slimes: [hostSlime],
-      tanks: [{ type: 'breed', startedAt: expiredAt, hostId: 'host-1', donorSnapshot }],
+      tanks: [{ type: 'breed', startedAt: expiredAt, hostId: 'host-1', hostSnapshot: hostSlime, donorSnapshot }],
       tankCount: 1,
       displaySlots: [null, null],
     })
