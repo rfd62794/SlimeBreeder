@@ -72,7 +72,12 @@ export const useGameStore = create<GameState>((set, get) => ({
     set({
       gold: saved.gold,
       penCapacity: saved.penCapacity,
-      slimes: saved.slimes.map((s) => ({ ...s, variance: 0 })),
+      slimes: saved.slimes.map((s) => ({
+        ...s,
+        color: s.color as import('../types').SlimeColor,
+        shape: s.shape as import('../types').SlimeShape,
+        variance: 0,
+      })),
     })
   },
 }))

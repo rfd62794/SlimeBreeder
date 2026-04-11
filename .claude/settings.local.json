@@ -10,7 +10,16 @@
       "Bash(node node_modules/tailwindcss/lib/cli.js init -p)",
       "Bash(git init:*)",
       "Bash(git add:*)",
-      "Bash(git commit:*)"
+      "Bash(git commit:*)",
+      "Bash(claude mcp:*)",
+      "Bash(npm test:*)",
+      "mcp__stitch__get_project",
+      "mcp__stitch__list_screens",
+      "mcp__stitch__list_design_systems",
+      "mcp__stitch__get_screen",
+      "WebFetch(domain:contribution.usercontent.google.com)",
+      "Bash(curl -sL \"https://contribution.usercontent.google.com/download?c=CgthaWRhX2NvZGVmeBJ8Eh1hcHBfY29tcGFuaW9uX2dlbmVyYXRlZF9maWxlcxpbCiVodG1sXzhiZDRlMDEzMDFkYTQxMzY4MzA2M2JhM2RkZTQzMGEzEgsSBxCi_9_aqR0YAZIBJAoKcHJvamVjdF9pZBIWQhQxMzYxNTQzMTA5MDQ4MDEyMjI1OA&filename=&opi=89354086\" -o /c/Github/SlimeBreeder/stitch-export.html)",
+      "Bash(npm run:*)"
     ]
   }
 }
