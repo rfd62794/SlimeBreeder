@@ -4,6 +4,7 @@ import type { Slime, SlimeColor, SlimeShape } from '../types'
 
 const COLORS: SlimeColor[] = ['Red', 'Blue', 'Green']
 const SHAPES: SlimeShape[] = ['Blob', 'Spiked', 'Elongated']
+const TIER_TOTAL = TIER_WEIGHTS.reduce((sum, w) => sum + w.weight, 0)
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
@@ -14,8 +15,7 @@ function pick<T>(arr: T[]): T {
  * Weights are relative (need not sum to any specific value).
  */
 function pickTier(): number {
-  const total = TIER_WEIGHTS.reduce((sum, w) => sum + w.weight, 0)
-  let r = Math.random() * total
+  let r = Math.random() * TIER_TOTAL
   for (const { tier, weight } of TIER_WEIGHTS) {
     r -= weight
     if (r <= 0) return tier
