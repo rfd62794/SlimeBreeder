@@ -2,6 +2,7 @@ import { Header } from './components/Header'
 import { StatsBar } from './components/StatsBar'
 import { HatchButton } from './components/HatchButton'
 import { InventoryList } from './components/InventoryList'
+import { DisplayRooms } from './components/DisplayRooms'
 import { ExpandFacility } from './components/ExpandFacility'
 import { BottomNav } from './components/BottomNav'
 
@@ -13,6 +14,7 @@ export function App() {
         <StatsBar />
         <HatchButton />
         <InventoryList />
+        <DisplayRooms />
         <ExpandFacility />
       </main>
       <BottomNav />
