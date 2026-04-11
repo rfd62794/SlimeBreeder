@@ -14,8 +14,12 @@ describe('computeBaseValue', () => {
     expect(computeBaseValue(1, 1, -0.1)).toBe(9)
   })
 
-  it('scales with higher tiers', () => {
-    expect(computeBaseValue(2, 2, 0)).toBe(20)
+  it('scales with higher tiers: T2/T2 = 44', () => {
+    expect(computeBaseValue(2, 2, 0)).toBe(44)
+  })
+
+  it('scales with higher tiers: T3/T3 = 190', () => {
+    expect(computeBaseValue(3, 3, 0)).toBe(190)
   })
 
   it('never returns less than 1', () => {
