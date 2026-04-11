@@ -3,7 +3,7 @@ import { useGameStore } from '../store/gameStore'
 import { DISPLAY_BASE_RATE } from '../config'
 import { COLOR_CHIP_CLASSES, SHAPE_DESIGNATIONS } from '../types'
 import { SlimeVisual } from './SlimeVisual'
-import { DisplaySlotPicker } from './DisplaySlotPicker'
+import { SlimePicker } from './SlimePicker'
 
 function slotGoldPerSec(colorTier: number, shapeTier: number) {
   return colorTier * shapeTier * DISPLAY_BASE_RATE
@@ -80,7 +80,14 @@ export function DisplayRooms() {
       </section>
 
       {pickerSlot !== null && (
-        <DisplaySlotPicker slotIndex={pickerSlot} onClose={() => setPickerSlot(null)} />
+        <SlimePicker
+          title={`SELECT_SPECIMEN — SLOT_${pickerSlot + 1}`}
+          onSelect={(slime) => {
+            useGameStore.getState().assignToDisplay(slime.id, pickerSlot)
+            setPickerSlot(null)
+          }}
+          onClose={() => setPickerSlot(null)}
+        />
       )}
     </>
   )

@@ -1,20 +1,17 @@
 import { useGameStore } from '../store/gameStore'
 import { COLOR_CHIP_CLASSES, SHAPE_DESIGNATIONS, COLOR_DESIGNATIONS } from '../types'
 import { SlimeVisual } from './SlimeVisual'
+import type { Slime } from '../types'
 
 interface Props {
-  slotIndex: number
+  onSelect: (slime: Slime) => void
   onClose: () => void
+  excludeIds?: string[]  // slimes to hide (e.g. already selected in the other breed slot)
+  title?: string
 }
 
-export function DisplaySlotPicker({ slotIndex, onClose }: Props) {
-  const slimes = useGameStore((s) => s.slimes)
-  const assignToDisplay = useGameStore((s) => s.assignToDisplay)
-
-  function handleAssign(slimeId: string) {
-    assignToDisplay(slimeId, slotIndex)
-    onClose()
-  }
+export function SlimePicker({ onSelect, onClose, excludeIds = [], title = 'SELECT_SPECIMEN' }: Props) {
+  const slimes = useGameStore((s) => s.slimes).filter((s) => !excludeIds.includes(s.id))
 
   return (
     <div
@@ -26,19 +23,19 @@ export function DisplaySlotPicker({ slotIndex, onClose }: Props) {
         onClick={(e) => e.stopPropagation()}
       >
         <p className="text-[10px] font-label text-on-surface-variant uppercase tracking-widest p-4 border-b border-outline-variant/20">
-          SELECT_SPECIMEN — SLOT_{slotIndex + 1}
+          {title}
         </p>
 
         {slimes.length === 0 ? (
           <p className="text-[11px] font-label text-on-surface-variant/50 uppercase tracking-widest p-6 text-center">
-            No specimens in containment.
+            No specimens available.
           </p>
         ) : (
           <ul className="divide-y divide-outline-variant/10">
             {slimes.map((slime) => (
               <li key={slime.id}>
                 <button
-                  onClick={() => handleAssign(slime.id)}
+                  onClick={() => { onSelect(slime); onClose() }}
                   className="w-full flex items-center gap-3 p-3 hover:bg-surface-container-highest transition-none text-left"
                 >
                   <SlimeVisual color={slime.color} shape={slime.shape} size={40} />
