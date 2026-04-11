@@ -136,7 +136,7 @@ export const useGameStore = create<GameState>((set, get) => ({
     let gold = saved.gold
 
     // Credit accumulated display room income (idle game style)
-    const displaySlots: Array<DisplaySlot | null> = (saved.displaySlots ?? [null, null]).map(
+    const displaySlots: Array<DisplaySlot | null> = (saved.displaySlots ?? Array(DISPLAY_SLOT_COUNT).fill(null)).map(
       (slot) => {
         if (!slot) return null
         const elapsedSec = (now - slot.assignedAt) / 1000
