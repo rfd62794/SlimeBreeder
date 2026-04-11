@@ -21,6 +21,7 @@ const donor: PersistedSlime = {
   shape: 'Spiked',
   colorTier: 1,
   shapeTier: 3,
+  variance: 0,
   actualValue: 100,
   createdAt: 2000,
 }

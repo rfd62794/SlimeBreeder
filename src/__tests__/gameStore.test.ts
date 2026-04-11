@@ -168,14 +168,14 @@ describe('assignToDisplay', () => {
 })
 
 describe('unassignFromDisplay', () => {
-  it('puts slime back in slimes[] with variance 0', () => {
+  it('puts slime back in slimes[] with original variance preserved', () => {
     useGameStore.getState().startHatch(); useGameStore.getState().resolveHatch(0)
     const slime = useGameStore.getState().slimes[0]
     useGameStore.getState().assignToDisplay(slime.id, 0)
     useGameStore.getState().unassignFromDisplay(0)
     const restored = useGameStore.getState().slimes[0]
     expect(restored.id).toBe(slime.id)
-    expect(restored.variance).toBe(0)
+    expect(restored.variance).toBe(slime.variance)
     expect(useGameStore.getState().displaySlots[0]).toBeNull()
   })
 })

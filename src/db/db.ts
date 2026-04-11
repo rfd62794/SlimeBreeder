@@ -6,6 +6,7 @@ export interface PersistedSlime {
   shape: string
   colorTier: number
   shapeTier: number
+  variance: number
   actualValue: number
   createdAt: number
 }

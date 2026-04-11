@@ -14,17 +14,10 @@ export function DisplayRooms() {
   const unassignFromDisplay = useGameStore((s) => s.unassignFromDisplay)
   const [pickerSlot, setPickerSlot] = useState<number | null>(null)
 
-  // Live gold ticker — reads fresh state each tick to avoid stale closure
+  // Live gold ticker — uses store action for proper persistence
   useEffect(() => {
     const id = setInterval(() => {
-      const state = useGameStore.getState()
-      const earned = state.displaySlots.reduce((acc, slot) => {
-        if (!slot) return acc
-        return acc + slotGoldPerSec(slot.slime.colorTier, slot.slime.shapeTier)
-      }, 0)
-      if (earned > 0) {
-        useGameStore.setState((s) => ({ gold: s.gold + earned }))
-      }
+      useGameStore.getState().tickDisplayGold()
     }, 1000)
     return () => clearInterval(id)
   }, [])

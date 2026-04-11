@@ -29,6 +29,7 @@ interface GameState {
   buyTankUpgrade: () => void
   assignToDisplay: (slimeId: string, slotIndex: number) => void
   unassignFromDisplay: (slotIndex: number) => void
+  tickDisplayGold: () => void
   loadGame: () => Promise<void>
 }
 
@@ -47,6 +48,7 @@ async function persist(
       shape: s.shape,
       colorTier: s.colorTier,
       shapeTier: s.shapeTier,
+      variance: s.variance,
       actualValue: s.actualValue,
       createdAt: s.createdAt,
     })),
@@ -61,6 +63,7 @@ async function persist(
               shape: slot.slime.shape,
               colorTier: slot.slime.colorTier,
               shapeTier: slot.slime.shapeTier,
+              variance: slot.slime.variance,
               actualValue: slot.slime.actualValue,
               createdAt: slot.slime.createdAt,
             },
@@ -118,6 +121,7 @@ export const useGameStore = create<GameState>((set, get) => ({
       shape: donor.shape,
       colorTier: donor.colorTier,
       shapeTier: donor.shapeTier,
+      variance: donor.variance,
       actualValue: donor.actualValue,
       createdAt: donor.createdAt,
     }
@@ -201,11 +205,24 @@ export const useGameStore = create<GameState>((set, get) => ({
     const { displaySlots, slimes } = get()
     const slot = displaySlots[slotIndex]
     if (!slot) return
-    const restoredSlime: Slime = { ...slot.slime, variance: 0 }
+    const restoredSlime: Slime = { ...slot.slime }
     const newSlots = displaySlots.map((s, i) => (i === slotIndex ? null : s))
     const next = { ...get(), slimes: [...slimes, restoredSlime], displaySlots: newSlots }
     set(next)
     persist(next)
+  },
+
+  tickDisplayGold() {
+    const state = get()
+    const earned = state.displaySlots.reduce((acc, slot) => {
+      if (!slot) return acc
+      return acc + slot.slime.colorTier * slot.slime.shapeTier * DISPLAY_BASE_RATE
+    }, 0)
+    if (earned > 0) {
+      const next = { ...state, gold: state.gold + earned }
+      set(next)
+      persist(next)
+    }
   },
 
   async loadGame() {
@@ -230,7 +247,7 @@ export const useGameStore = create<GameState>((set, get) => ({
           ...slot.slimeData,
           color: slot.slimeData.color as import('../types').SlimeColor,
           shape: slot.slimeData.shape as import('../types').SlimeShape,
-          variance: 0,
+          variance: slot.slimeData.variance ?? 0,
         },
       }
     })
@@ -248,7 +265,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         ...s,
         color: s.color as import('../types').SlimeColor,
         shape: s.shape as import('../types').SlimeShape,
-        variance: 0,
+        variance: s.variance ?? 0,
       })),
     })
 
