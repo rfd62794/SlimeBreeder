@@ -4,8 +4,6 @@ export interface PersistedSlime {
   id: string
   color: string
   shape: string
-  colorTier: number
-  shapeTier: number
   variance: number
   actualValue: number
   createdAt: number
@@ -20,61 +18,120 @@ export interface PersistedDisplaySlot {
 export interface HatchTankSlot {
   type: 'hatch'
   startedAt: number
+  lockedColor?: string   // regent-locked color (optional)
+  lockedShape?: string   // regent-locked shape (optional)
 }
 
 export interface BreedTankSlot {
   type: 'breed'
   startedAt: number
   hostId: string
-  hostSnapshot: PersistedSlime   // full host genetics captured at startBreed time;
-                                  // host stays in pen but may be sold/displayed before resolve
-  donorSnapshot: PersistedSlime  // full donor genetics captured at startBreed time;
-                                  // donor is removed from pen immediately, so this snapshot
-                                  // is the only source of truth at resolveBreed time
+  hostSnapshot: PersistedSlime
+  donorSnapshot: PersistedSlime
 }
 
 export type TankSlot = HatchTankSlot | BreedTankSlot
+
+export interface PersistedDiscovery {
+  id: number           // always 1 — single-row
+  colors: string[]     // discovered SlimeColor names
+  shapes: string[]     // discovered SlimeShape names
+  regents: number
+}
 
 export interface PersistedGameState {
   id: number // always 1 — single-row save
   gold: number
   penCapacity: number
   slimes: PersistedSlime[]
-  tanks: Array<TankSlot | null>  // length always equals tankCount; null = empty slot
+  tanks: Array<TankSlot | null>
   tankCount: number
   displaySlots: Array<PersistedDisplaySlot | null>
 }
 
 class SlimeBreederDB extends Dexie {
   gameState!: Table<PersistedGameState>
+  discovery!: Table<PersistedDiscovery>
 
   constructor() {
     super('SlimeBreederDB')
+
     this.version(1).stores({ gameState: 'id' })
+
     this.version(2).stores({ gameState: 'id' }).upgrade((tx) =>
-      tx
-        .table('gameState')
-        .toCollection()
-        .modify((row) => {
-          if (row.hatchStartedAt === undefined) row.hatchStartedAt = null
-          if (row.displaySlots === undefined) row.displaySlots = [null, null]
-        }),
+      tx.table('gameState').toCollection().modify((row) => {
+        if (row.hatchStartedAt === undefined) row.hatchStartedAt = null
+        if (row.displaySlots === undefined) row.displaySlots = [null, null]
+      }),
     )
+
     this.version(3).stores({ gameState: 'id' }).upgrade((tx) =>
-      tx
-        .table('gameState')
-        .toCollection()
-        .modify((row) => {
-          // Migrate hatchStartedAt (v2) → tanks[0] (v3)
-          const slot: TankSlot | null =
-            row.hatchStartedAt != null
-              ? { type: 'hatch', startedAt: row.hatchStartedAt }
-              : null
-          row.tanks = [slot]
-          row.tankCount = 1
-          delete row.hatchStartedAt
-        }),
+      tx.table('gameState').toCollection().modify((row) => {
+        const slot: TankSlot | null =
+          row.hatchStartedAt != null
+            ? { type: 'hatch', startedAt: row.hatchStartedAt }
+            : null
+        row.tanks = [slot]
+        row.tankCount = 1
+        delete row.hatchStartedAt
+      }),
     )
+
+    // v4: Discovery system — migrate old slimes (remove colorTier/shapeTier),
+    // add discovery table, map old shape names to new geometry names.
+    this.version(4).stores({ gameState: 'id', discovery: 'id' }).upgrade(async (tx) => {
+      const SHAPE_MIGRATION: Record<string, string> = {
+        Blob: 'Circle',
+        Spiked: 'Triangle',
+        Elongated: 'Teardrop',
+      }
+
+      const discoveredColors = new Set(['Red', 'Yellow', 'Blue'])
+      const discoveredShapes = new Set<string>(['Circle', 'Square', 'Triangle'])
+
+      await tx.table('gameState').toCollection().modify((row) => {
+        // Migrate slimes
+        for (const s of row.slimes ?? []) {
+          if (SHAPE_MIGRATION[s.shape]) s.shape = SHAPE_MIGRATION[s.shape]
+          discoveredColors.add(s.color)
+          discoveredShapes.add(s.shape)
+          delete s.colorTier
+          delete s.shapeTier
+        }
+        // Migrate display slot slime data
+        for (const slot of row.displaySlots ?? []) {
+          if (slot?.slimeData) {
+            if (SHAPE_MIGRATION[slot.slimeData.shape]) {
+              slot.slimeData.shape = SHAPE_MIGRATION[slot.slimeData.shape]
+            }
+            discoveredColors.add(slot.slimeData.color)
+            discoveredShapes.add(slot.slimeData.shape)
+            delete (slot.slimeData as Record<string, unknown>).colorTier
+            delete (slot.slimeData as Record<string, unknown>).shapeTier
+          }
+        }
+        // Migrate tank snapshots
+        for (const tank of row.tanks ?? []) {
+          if (tank?.type === 'breed') {
+            for (const snap of [tank.hostSnapshot, tank.donorSnapshot]) {
+              if (snap) {
+                if (SHAPE_MIGRATION[snap.shape]) snap.shape = SHAPE_MIGRATION[snap.shape]
+                delete (snap as Record<string, unknown>).colorTier
+                delete (snap as Record<string, unknown>).shapeTier
+              }
+            }
+          }
+        }
+      })
+
+      // Create default discovery row
+      await tx.table('discovery').put({
+        id: 1,
+        colors: [...discoveredColors],
+        shapes: [...discoveredShapes],
+        regents: 0,
+      })
+    })
   }
 }
 

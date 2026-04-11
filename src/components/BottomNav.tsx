@@ -1,4 +1,4 @@
-type Tab = 'chamber' | 'mutate'
+type Tab = 'chamber' | 'mutate' | 'codex'
 
 interface Props {
   activeTab: Tab
@@ -8,7 +8,7 @@ interface Props {
 const NAV_ITEMS: Array<{ icon: string; label: string; tab: Tab | null }> = [
   { icon: 'database', label: 'CHAMBER', tab: 'chamber' },
   { icon: 'science',  label: 'MUTATE',  tab: 'mutate' },
-  { icon: 'token',    label: 'MARKET',  tab: null },   // not yet implemented
+  { icon: 'menu_book', label: 'CODEX',  tab: 'codex' },
   { icon: 'settings', label: 'SYSTEM',  tab: null },
 ]
 

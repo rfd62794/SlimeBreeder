@@ -7,8 +7,9 @@ import { DisplayRooms } from './components/DisplayRooms'
 import { ExpandFacility } from './components/ExpandFacility'
 import { BottomNav } from './components/BottomNav'
 import { MutatePage } from './components/MutatePage'
+import { DiscoveryPage } from './components/DiscoveryPage'
 
-type Tab = 'chamber' | 'mutate'
+type Tab = 'chamber' | 'mutate' | 'codex'
 
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>('chamber')
@@ -25,8 +26,10 @@ export function App() {
             <DisplayRooms />
             <ExpandFacility />
           </>
-        ) : (
+        ) : activeTab === 'mutate' ? (
           <MutatePage />
+        ) : (
+          <DiscoveryPage />
         )}
       </main>
       <BottomNav activeTab={activeTab} onTabChange={setActiveTab} />

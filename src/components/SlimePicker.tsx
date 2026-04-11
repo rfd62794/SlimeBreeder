@@ -1,12 +1,13 @@
 import { useGameStore } from '../store/gameStore'
-import { COLOR_CHIP_CLASSES, SHAPE_DESIGNATIONS, COLOR_DESIGNATIONS } from '../types'
+import { COLOR_DEFS, SHAPE_DEFS } from '../data/traitDefs'
 import { SlimeVisual } from './SlimeVisual'
+import type { SlimeColor, SlimeShape } from '../data/traitDefs'
 import type { Slime } from '../types'
 
 interface Props {
   onSelect: (slime: Slime) => void
   onClose: () => void
-  excludeIds?: string[]  // slimes to hide (e.g. already selected in the other breed slot)
+  excludeIds?: string[]
   title?: string
 }
 
@@ -38,58 +39,63 @@ export function SlimePicker({ onSelect, onClose, excludeIds = [], title = 'SELEC
           </p>
         ) : (
           <ul className="divide-y divide-outline-variant/10 overflow-y-auto">
-            {/* Available slimes — selectable */}
-            {slimes.map((slime) => (
-              <li key={slime.id}>
-                <button
-                  onClick={() => { onSelect(slime); onClose() }}
-                  className="w-full flex items-center gap-3 p-3 hover:bg-surface-container-highest transition-none text-left"
-                >
-                  <SlimeVisual color={slime.color} shape={slime.shape} size={40} />
-                  <div className="flex-grow">
-                    <span
-                      className={`text-[10px] font-label font-bold uppercase px-2 py-0.5 ${COLOR_CHIP_CLASSES[slime.color]}`}
-                    >
-                      {COLOR_DESIGNATIONS[slime.color]}
-                    </span>
-                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">
-                      {SHAPE_DESIGNATIONS[slime.shape]}
-                    </p>
-                  </div>
-                  <span className="text-sm font-headline font-bold text-primary">
-                    {slime.actualValue}G
-                  </span>
-                </button>
-              </li>
-            ))}
-
-            {/* Displayed slimes — visible but grayed out */}
-            {displayedSlimes.map((slime) => (
-              <li key={slime.id}>
-                <div className="w-full flex items-center gap-3 p-3 opacity-35 cursor-not-allowed">
-                  <div className="relative">
+            {slimes.map((slime) => {
+              const colorDef = COLOR_DEFS[slime.color as SlimeColor] ?? COLOR_DEFS.Red
+              const shapeDef = SHAPE_DEFS[slime.shape as SlimeShape] ?? SHAPE_DEFS.Circle
+              return (
+                <li key={slime.id}>
+                  <button
+                    onClick={() => { onSelect(slime); onClose() }}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-surface-container-highest transition-none text-left"
+                  >
                     <SlimeVisual color={slime.color} shape={slime.shape} size={40} />
-                  </div>
-                  <div className="flex-grow">
-                    <span
-                      className={`text-[10px] font-label font-bold uppercase px-2 py-0.5 ${COLOR_CHIP_CLASSES[slime.color]}`}
-                    >
-                      {COLOR_DESIGNATIONS[slime.color]}
+                    <div className="flex-grow">
+                      <span
+                        className="text-[10px] font-label font-bold uppercase px-2 py-0.5"
+                        style={{ background: colorDef.chipBg, color: colorDef.chipText }}
+                      >
+                        {colorDef.designation}
+                      </span>
+                      <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">
+                        {shapeDef.designation}
+                      </p>
+                    </div>
+                    <span className="text-sm font-headline font-bold text-primary">
+                      {slime.actualValue}G
                     </span>
-                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">
-                      {SHAPE_DESIGNATIONS[slime.shape]}
-                    </p>
+                  </button>
+                </li>
+              )
+            })}
+
+            {displayedSlimes.map((slime) => {
+              const colorDef = COLOR_DEFS[slime.color as SlimeColor] ?? COLOR_DEFS.Red
+              const shapeDef = SHAPE_DEFS[slime.shape as SlimeShape] ?? SHAPE_DEFS.Circle
+              return (
+                <li key={slime.id}>
+                  <div className="w-full flex items-center gap-3 p-3 opacity-35 cursor-not-allowed">
+                    <SlimeVisual color={slime.color} shape={slime.shape} size={40} />
+                    <div className="flex-grow">
+                      <span
+                        className="text-[10px] font-label font-bold uppercase px-2 py-0.5"
+                        style={{ background: colorDef.chipBg, color: colorDef.chipText }}
+                      >
+                        {colorDef.designation}
+                      </span>
+                      <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">
+                        {shapeDef.designation}
+                      </p>
+                    </div>
+                    <span className="text-[9px] font-label font-bold uppercase tracking-widest text-on-surface-variant border border-outline-variant/40 px-2 py-0.5">
+                      ON_DISPLAY
+                    </span>
                   </div>
-                  <span className="text-[9px] font-label font-bold uppercase tracking-widest text-on-surface-variant border border-outline-variant/40 px-2 py-0.5">
-                    ON_DISPLAY
-                  </span>
-                </div>
-              </li>
-            ))}
+                </li>
+              )
+            })}
           </ul>
         )}
       </div>
     </div>
   )
 }
-

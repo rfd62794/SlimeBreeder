@@ -1,4 +1,3 @@
-import { useRef } from 'react'
 import { useGameStore } from '../store/gameStore'
 import { TankCard } from './TankCard'
 import { BreedingPanel } from './BreedingPanel'
@@ -8,11 +7,6 @@ export function MutatePage() {
   const tankCount = useGameStore((s) => s.tankCount)
   const gold = useGameStore((s) => s.gold)
   const buyTankUpgrade = useGameStore((s) => s.buyTankUpgrade)
-  const breedingPanelRef = useRef<HTMLDivElement>(null)
-
-  function scrollToBreeding() {
-    breedingPanelRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }
 
   return (
     <div className="space-y-0">
@@ -27,7 +21,7 @@ export function MutatePage() {
 
         <div className="space-y-2 px-4">
           {Array.from({ length: tankCount }, (_, i) => (
-            <TankCard key={i} tankIndex={i} onBreedClick={scrollToBreeding} />
+            <TankCard key={i} tankIndex={i} />
           ))}
         </div>
 
@@ -43,7 +37,7 @@ export function MutatePage() {
       </section>
 
       {/* ── BREEDING LAB ───────────────────────────────────────────── */}
-      <div ref={breedingPanelRef}>
+      <div>
         <BreedingPanel />
       </div>
     </div>

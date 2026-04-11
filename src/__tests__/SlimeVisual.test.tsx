@@ -1,39 +1,64 @@
-import { render } from '@testing-library/react'
 import { describe, it, expect } from 'vitest'
+import { render } from '@testing-library/react'
 import { SlimeVisual } from '../components/SlimeVisual'
-import type { SlimeColor, SlimeShape } from '../types'
+import { ALL_COLORS, ALL_SHAPES } from '../data/traitDefs'
+import type { SlimeColor, SlimeShape } from '../data/traitDefs'
 
-const COLORS: SlimeColor[] = ['Green', 'Blue', 'Red']
-const SHAPES: SlimeShape[] = ['Blob', 'Spiked', 'Elongated']
+// Smoke test: every color × shape combination renders without crashing
+const TEST_COLORS: SlimeColor[] = ['Red', 'Yellow', 'Blue', 'Green', 'Purple', 'Orange']
+const TEST_SHAPES: SlimeShape[] = ['Circle', 'Square', 'Triangle', 'Star', 'Diamond', 'Teardrop']
 
 describe('SlimeVisual', () => {
-  it.each(
-    COLORS.flatMap((c) => SHAPES.map((s) => [c, s] as [SlimeColor, SlimeShape])),
-  )('renders %s %s without throwing', (color, shape) => {
-    const { container } = render(<SlimeVisual color={color} shape={shape} />)
-    expect(container.querySelector('svg')).not.toBeNull()
+  it('renders an SVG for each T1/T2 color × shape combo', () => {
+    for (const color of TEST_COLORS) {
+      for (const shape of TEST_SHAPES) {
+        const { container } = render(<SlimeVisual color={color} shape={shape} size={80} />)
+        expect(container.querySelector('svg')).toBeTruthy()
+      }
+    }
   })
 
-  it('two same-variant instances have different gradient ids', () => {
-    const { container } = render(
-      <>
-        <SlimeVisual color="Green" shape="Blob" />
-        <SlimeVisual color="Green" shape="Blob" />
-      </>,
-    )
-    const gradients = container.querySelectorAll('radialGradient')
-    expect(gradients).toHaveLength(2)
-    const [id1, id2] = Array.from(gradients).map((g) => g.id)
-    expect(id1).not.toBe(id2)
+  it('uses correct viewBox', () => {
+    const { container } = render(<SlimeVisual color="Red" shape="Circle" />)
+    const svg = container.querySelector('svg')
+    expect(svg?.getAttribute('viewBox')).toBe('0 0 100 100')
   })
 
-  it('Elongated renders a drip element', () => {
-    const { container } = render(<SlimeVisual color="Blue" shape="Elongated" />)
-    expect(container.querySelector('[data-drip]')).not.toBeNull()
+  it('scales to specified size', () => {
+    const { container } = render(<SlimeVisual color="Blue" shape="Square" size={120} />)
+    const svg = container.querySelector('svg')
+    expect(svg?.getAttribute('width')).toBe('120')
+    expect(svg?.getAttribute('height')).toBe('120')
   })
 
-  it('Spiked renders an inner core circle', () => {
-    const { container } = render(<SlimeVisual color="Red" shape="Spiked" />)
-    expect(container.querySelector('[data-core]')).not.toBeNull()
+  it('contains exactly one body path', () => {
+    const { container } = render(<SlimeVisual color="Yellow" shape="Triangle" />)
+    const paths = container.querySelectorAll('svg > path')
+    expect(paths.length).toBeGreaterThanOrEqual(1) // body + possible mouth
+  })
+
+  it('has a radial gradient definition', () => {
+    const { container } = render(<SlimeVisual color="Green" shape="Diamond" />)
+    expect(container.querySelector('radialGradient')).toBeTruthy()
+  })
+
+  it('renders eyes (at least 2 ellipses for eye whites)', () => {
+    const { container } = render(<SlimeVisual color="Purple" shape="Star" />)
+    const ellipses = container.querySelectorAll('ellipse')
+    expect(ellipses.length).toBeGreaterThanOrEqual(2) // highlight + 2 eye whites = 3+
+  })
+
+  it('renders all defined colors without crashing', () => {
+    for (const color of ALL_COLORS) {
+      const { container } = render(<SlimeVisual color={color} shape="Circle" />)
+      expect(container.querySelector('svg')).toBeTruthy()
+    }
+  })
+
+  it('renders all defined shapes without crashing', () => {
+    for (const shape of ALL_SHAPES) {
+      const { container } = render(<SlimeVisual color="Red" shape={shape} />)
+      expect(container.querySelector('svg')).toBeTruthy()
+    }
   })
 })

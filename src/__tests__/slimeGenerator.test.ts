@@ -1,64 +1,55 @@
-import { describe, it, expect, vi, afterEach } from 'vitest'
+import { describe, it, expect, vi } from 'vitest'
 import { generateSlime } from '../utils/slimeGenerator'
+import type { SlimeColor, SlimeShape } from '../data/traitDefs'
 
-const COLORS = ['Red', 'Blue', 'Green']
-const SHAPES = ['Blob', 'Spiked', 'Elongated']
-
-afterEach(() => {
-  vi.restoreAllMocks()
-})
+const STARTING_COLORS: SlimeColor[] = ['Red', 'Yellow', 'Blue']
+const STARTING_SHAPES: SlimeShape[] = ['Circle', 'Square', 'Triangle']
 
 describe('generateSlime', () => {
-  it('returns a slime with valid color', () => {
-    const slime = generateSlime()
-    expect(COLORS).toContain(slime.color)
+  it('produces a valid slime with id, color, shape, variance, and value', () => {
+    const s = generateSlime(STARTING_COLORS, STARTING_SHAPES)
+    expect(s.id).toBeDefined()
+    expect(STARTING_COLORS).toContain(s.color)
+    expect(STARTING_SHAPES).toContain(s.shape)
+    expect(typeof s.variance).toBe('number')
+    expect(s.actualValue).toBeGreaterThanOrEqual(1)
+    expect(s.createdAt).toBeLessThanOrEqual(Date.now())
   })
 
-  it('returns a slime with valid shape', () => {
-    const slime = generateSlime()
-    expect(SHAPES).toContain(slime.shape)
+  it('picks from discovered pool only (custom pool)', () => {
+    const customColors: SlimeColor[] = ['Purple']
+    const customShapes: SlimeShape[] = ['Star']
+    const s = generateSlime(customColors, customShapes)
+    expect(s.color).toBe('Purple')
+    expect(s.shape).toBe('Star')
   })
 
-  it('colorTier and shapeTier are each 1, 2, or 3', () => {
-    for (let i = 0; i < 50; i++) {
-      const slime = generateSlime()
-      expect([1, 2, 3]).toContain(slime.colorTier)
-      expect([1, 2, 3]).toContain(slime.shapeTier)
-    }
+  it('respects locked color', () => {
+    const s = generateSlime(STARTING_COLORS, STARTING_SHAPES, 'Blue')
+    expect(s.color).toBe('Blue')
   })
 
-  it('actualValue is positive and scales with tier', () => {
-    for (let i = 0; i < 50; i++) {
-      const slime = generateSlime()
-      expect(slime.actualValue).toBeGreaterThanOrEqual(1)
-    }
+  it('respects locked shape', () => {
+    const s = generateSlime(STARTING_COLORS, STARTING_SHAPES, undefined, 'Triangle')
+    expect(s.shape).toBe('Triangle')
   })
 
-  it('generates a unique id each call', () => {
-    const ids = new Set(Array.from({ length: 50 }, () => generateSlime().id))
-    expect(ids.size).toBe(50)
-  })
-})
-
-describe('pickTier boundary values', () => {
-  it('Math.random()=0.0 -> tier 1 (r lands in first bucket)', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.0)
-    const slime = generateSlime()
-    expect(slime.colorTier).toBe(1)
-    expect(slime.shapeTier).toBe(1)
+  it('respects both locks', () => {
+    const s = generateSlime(STARTING_COLORS, STARTING_SHAPES, 'Red', 'Square')
+    expect(s.color).toBe('Red')
+    expect(s.shape).toBe('Square')
   })
 
-  it('Math.random()=0.65 -> tier 2 (r lands in second bucket)', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.65)
-    const slime = generateSlime()
-    expect(slime.colorTier).toBe(2)
-    expect(slime.shapeTier).toBe(2)
+  it('computes a non-negative actualValue', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0) // min variance
+    const s = generateSlime(STARTING_COLORS, STARTING_SHAPES)
+    expect(s.actualValue).toBeGreaterThanOrEqual(1)
+    vi.restoreAllMocks()
   })
 
-  it('Math.random()=0.95 -> tier 3 (r lands in third bucket)', () => {
-    vi.spyOn(Math, 'random').mockReturnValue(0.95)
-    const slime = generateSlime()
-    expect(slime.colorTier).toBe(3)
-    expect(slime.shapeTier).toBe(3)
+  it('generates unique ids', () => {
+    const s1 = generateSlime(STARTING_COLORS, STARTING_SHAPES)
+    const s2 = generateSlime(STARTING_COLORS, STARTING_SHAPES)
+    expect(s1.id).not.toBe(s2.id)
   })
 })

@@ -1,22 +1,23 @@
+import { getColorTier, getShapeTier } from '../data/traitDefs'
+import type { SlimeColor, SlimeShape } from '../data/traitDefs'
+
 /**
- * Private lookup: Gold contribution per trait tier.
- * T1+T1 = 10G, T2+T2 = 44G, T3+T3 = 190G (at 0 variance).
- * Lives here rather than config.ts because this is a formula constant,
- * not a designer tuning knob.
+ * Gold contribution per trait tier.
+ * T1+T1 = 10G, T2+T2 = 44G, T3+T3 = 190G, T4+T4 = 600G (at 0 variance).
  */
-const TIER_VALUE: Record<number, number> = { 1: 5, 2: 22, 3: 95 }
+const TIER_VALUE: Record<number, number> = { 1: 5, 2: 22, 3: 95, 4: 300 }
 
 /**
  * Compute the actual Gold value of a slime.
- * @param colorTier - Tier rank of the color trait (1-3)
- * @param shapeTier - Tier rank of the shape trait (1-3)
- * @param variance  - Random variance in [-0.1, 0.1] applied as a multiplier
+ * Tier is derived from the color/shape name — no separate tier fields needed.
  */
 export function computeBaseValue(
-  colorTier: number,
-  shapeTier: number,
+  color: SlimeColor,
+  shape: SlimeShape,
   variance: number,
 ): number {
-  const base = TIER_VALUE[colorTier] + TIER_VALUE[shapeTier]
+  const colorVal = TIER_VALUE[getColorTier(color)] ?? 5
+  const shapeVal = TIER_VALUE[getShapeTier(shape)] ?? 5
+  const base = colorVal + shapeVal
   return Math.max(1, Math.round(base * (1 + variance)))
 }

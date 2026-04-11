@@ -1,44 +1,31 @@
-import { TIER_WEIGHTS } from '../config'
 import { computeBaseValue } from './economics'
-import type { Slime, SlimeColor, SlimeShape } from '../types'
-
-const COLORS: SlimeColor[] = ['Red', 'Blue', 'Green']
-const SHAPES: SlimeShape[] = ['Blob', 'Spiked', 'Elongated']
-const TIER_TOTAL = TIER_WEIGHTS.reduce((sum, w) => sum + w.weight, 0)
+import type { SlimeColor, SlimeShape } from '../data/traitDefs'
+import type { Slime } from '../types'
 
 function pick<T>(arr: T[]): T {
   return arr[Math.floor(Math.random() * arr.length)]
 }
 
 /**
- * Weighted random tier selection using TIER_WEIGHTS from config.
- * Weights are relative (need not sum to any specific value).
+ * Generate a random slime from the player's discovered trait pool.
+ * Higher-tier traits are rarer within the pool.
+ * Optional locks (from Regent system) force specific color/shape.
  */
-function pickTier(): number {
-  let r = Math.random() * TIER_TOTAL
-  for (const { tier, weight } of TIER_WEIGHTS) {
-    r -= weight
-    if (r <= 0) return tier
-  }
-  // Fallback: floating-point edge case guard
-  return TIER_WEIGHTS[TIER_WEIGHTS.length - 1].tier
-}
-
-export function generateSlime(): Slime {
-  const color = pick(COLORS)
-  const shape = pick(SHAPES)
-  const colorTier = pickTier()
-  const shapeTier = pickTier()
-  // variance in [-0.1, 0.1]
+export function generateSlime(
+  discoveredColors: SlimeColor[],
+  discoveredShapes: SlimeShape[],
+  lockedColor?: SlimeColor,
+  lockedShape?: SlimeShape,
+): Slime {
+  const color = lockedColor ?? pick(discoveredColors)
+  const shape = lockedShape ?? pick(discoveredShapes)
   const variance = parseFloat((Math.random() * 0.2 - 0.1).toFixed(2))
-  const actualValue = computeBaseValue(colorTier, shapeTier, variance)
+  const actualValue = computeBaseValue(color, shape, variance)
 
   return {
     id: crypto.randomUUID(),
     color,
     shape,
-    colorTier,
-    shapeTier,
     variance,
     actualValue,
     createdAt: Date.now(),

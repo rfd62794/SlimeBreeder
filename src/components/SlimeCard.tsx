@@ -1,6 +1,6 @@
 import { useGameStore } from '../store/gameStore'
-import { COLOR_CHIP_CLASSES, SHAPE_DESIGNATIONS } from '../types'
 import { SlimeVisual } from './SlimeVisual'
+import { COLOR_DEFS, SHAPE_DEFS, getColorTier, getShapeTier } from '../data/traitDefs'
 import type { Slime } from '../types'
 
 interface Props {
@@ -9,32 +9,36 @@ interface Props {
 
 export function SlimeCard({ slime }: Props) {
   const sellSlime = useGameStore((s) => s.sellSlime)
+  const colorDef = COLOR_DEFS[slime.color] ?? COLOR_DEFS.Red
+  const shapeDef = SHAPE_DEFS[slime.shape] ?? SHAPE_DEFS.Circle
+  const colorTier = getColorTier(slime.color)
+  const shapeTier = getShapeTier(slime.shape)
 
   return (
-    <div className="bg-surface border-t-2 border-outline-variant/30 flex flex-col group">
-      {/* Slime visual area */}
-      <div className="h-24 flex items-center justify-center bg-surface-container-lowest relative">
-        <SlimeVisual color={slime.color} shape={slime.shape} size={80} />
-        <span
-          className={`absolute top-2 right-2 px-2 py-0.5 text-[10px] font-label font-bold uppercase ${COLOR_CHIP_CLASSES[slime.color]}`}
-        >
-          {SHAPE_DESIGNATIONS[slime.shape]}
-        </span>
+    <div className="flex items-center gap-3 p-3 bg-surface-container border border-outline-variant/15">
+      <SlimeVisual color={slime.color} shape={slime.shape} size={56} />
+
+      <div className="flex-grow min-w-0">
+        <div className="flex items-center gap-2">
+          <span
+            className="text-[10px] font-label font-bold uppercase px-2 py-0.5"
+            style={{ background: colorDef.chipBg, color: colorDef.chipText }}
+          >
+            {colorDef.designation}
+          </span>
+          <span className="text-[9px] font-label text-on-surface-variant/60 uppercase">T{colorTier}</span>
+        </div>
+        <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">
+          {shapeDef.designation}
+          <span className="text-on-surface-variant/50 ml-1">T{shapeTier}</span>
+        </p>
       </div>
 
-      {/* Card data */}
-      <div className="p-3 flex items-center justify-between gap-2">
-        <div>
-          <span className="text-[10px] font-label text-on-surface-variant uppercase block">
-            Unit_Value
-          </span>
-          <span className="text-xl font-headline font-bold text-primary">
-            {slime.actualValue}G
-          </span>
-        </div>
+      <div className="text-right flex-shrink-0">
+        <p className="text-sm font-headline font-bold text-primary">{slime.actualValue}G</p>
         <button
           onClick={() => sellSlime(slime.id)}
-          className="bg-surface-container-highest text-primary font-label text-[11px] py-2 px-4 hover:bg-surface-bright transition-none uppercase tracking-widest"
+          className="text-[9px] font-label uppercase tracking-widest text-error hover:text-error/80 transition-none mt-1"
         >
           LIQUIDATE
         </button>
