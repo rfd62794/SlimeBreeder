@@ -176,6 +176,14 @@ export const useGameStore = create<GameState>((set, get) => ({
     const slot = state.tanks[tankIndex]
     if (!slot || slot.type !== 'breed') return
 
+    if (!slot.hostSnapshot || !slot.donorSnapshot) {
+      // Legacy guard: if it's an old breed tank missing snapshots, just clear it and fail gracefully
+      const cleanTanks = state.tanks.map((t, i) => (i === tankIndex ? null : t))
+      set({ ...state, tanks: cleanTanks })
+      persist({ ...state, tanks: cleanTanks })
+      return
+    }
+
     const hostForBreed: Slime = {
       ...slot.hostSnapshot,
       color: slot.hostSnapshot.color as SlimeColor,
