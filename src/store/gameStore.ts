@@ -2,30 +2,44 @@ import { create } from 'zustand'
 import { db } from '../db/db'
 import { generateSlime } from '../utils/slimeGenerator'
 import type { Slime, DisplaySlot } from '../types'
-import { PEN_UPGRADE_COST, HATCH_DURATION_MS, DISPLAY_SLOT_COUNT, DISPLAY_BASE_RATE } from '../config'
+import type { TankSlot } from '../db/db'
+import {
+  PEN_UPGRADE_COST,
+  HATCH_DURATION_MS,
+  DISPLAY_SLOT_COUNT,
+  DISPLAY_BASE_RATE,
+  TANK_UPGRADE_COST,
+} from '../config'
 
 interface GameState {
   gold: number
   penCapacity: number
   slimes: Slime[]
-  hatchStartedAt: number | null
+  tanks: Array<TankSlot | null>
+  tankCount: number
   displaySlots: Array<DisplaySlot | null>
 
-  startHatch: () => void
-  resolveHatch: () => void
+  startHatch: (tankIndex?: number) => void
+  resolveHatch: (tankIndex: number) => void
+  startBreed: (hostId: string, donorId: string) => void
+  resolveBreed: (tankIndex: number) => void
   sellSlime: (id: string) => void
   buyPenUpgrade: () => void
+  buyTankUpgrade: () => void
   assignToDisplay: (slimeId: string, slotIndex: number) => void
   unassignFromDisplay: (slotIndex: number) => void
   loadGame: () => Promise<void>
 }
 
-async function persist(state: Pick<GameState, 'gold' | 'penCapacity' | 'slimes' | 'hatchStartedAt' | 'displaySlots'>) {
+async function persist(
+  state: Pick<GameState, 'gold' | 'penCapacity' | 'slimes' | 'tanks' | 'tankCount' | 'displaySlots'>,
+) {
   await db.gameState.put({
     id: 1,
     gold: state.gold,
     penCapacity: state.penCapacity,
-    hatchStartedAt: state.hatchStartedAt,
+    tanks: state.tanks,
+    tankCount: state.tankCount,
     slimes: state.slimes.map((s) => ({
       id: s.id,
       color: s.color,
@@ -59,25 +73,80 @@ export const useGameStore = create<GameState>((set, get) => ({
   gold: 50,
   penCapacity: 5,
   slimes: [],
-  hatchStartedAt: null,
+  tanks: [null],
+  tankCount: 1,
   displaySlots: Array(DISPLAY_SLOT_COUNT).fill(null),
 
-  startHatch() {
-    const { slimes, penCapacity, hatchStartedAt } = get()
+  startHatch(tankIndex?: number) {
+    const { slimes, penCapacity, tanks } = get()
     if (slimes.length >= penCapacity) return
-    if (hatchStartedAt !== null) return
-    const next = { ...get(), hatchStartedAt: Date.now() }
+    const idx = tankIndex ?? tanks.findIndex((t) => t === null)
+    if (idx === -1 || tanks[idx] !== null) return
+    const newTanks = tanks.map((t, i): TankSlot | null =>
+      i === idx ? { type: 'hatch', startedAt: Date.now() } : t,
+    )
+    const next = { ...get(), tanks: newTanks }
     set(next)
     persist(next)
   },
 
-  resolveHatch() {
+  resolveHatch(tankIndex: number) {
     const state = get()
-    if (state.hatchStartedAt === null) return // guard: idempotent — safe to call multiple times
+    const slot = state.tanks[tankIndex]
+    if (!slot || slot.type !== 'hatch') return // idempotent guard
+    const newTanks = state.tanks.map((t, i): TankSlot | null => (i === tankIndex ? null : t))
     const next = {
       ...state,
       slimes: [...state.slimes, generateSlime()],
-      hatchStartedAt: null,
+      tanks: newTanks,
+    }
+    set(next)
+    persist(next)
+  },
+
+  startBreed(hostId: string, donorId: string) {
+    const { slimes, tanks } = get()
+    const host = slimes.find((s) => s.id === hostId)
+    const donor = slimes.find((s) => s.id === donorId)
+    if (!host || !donor) return
+    const idx = tanks.findIndex((t) => t === null)
+    if (idx === -1) return // no free tank
+    const donorSnapshot = {
+      id: donor.id,
+      color: donor.color,
+      shape: donor.shape,
+      colorTier: donor.colorTier,
+      shapeTier: donor.shapeTier,
+      actualValue: donor.actualValue,
+      createdAt: donor.createdAt,
+    }
+    const newTanks = tanks.map((t, i): TankSlot | null =>
+      i === idx ? { type: 'breed', startedAt: Date.now(), hostId, donorSnapshot } : t,
+    )
+    const next = {
+      ...get(),
+      slimes: slimes.filter((s) => s.id !== donorId), // donor consumed immediately
+      tanks: newTanks,
+    }
+    set(next)
+    persist(next)
+  },
+
+  resolveBreed(tankIndex: number) {
+    const state = get()
+    const slot = state.tanks[tankIndex]
+    if (!slot || slot.type !== 'breed') return // idempotent guard
+    const host = state.slimes.find((s) => s.id === slot.hostId)
+    if (!host) return // host not found — guard against corrupt state
+    // breedSlimes imported here to avoid circular dependency during testing
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const { breedSlimes } = require('../utils/breedSlimes') as typeof import('../utils/breedSlimes')
+    const offspring = breedSlimes(host, slot.donorSnapshot)
+    const newTanks = state.tanks.map((t, i): TankSlot | null => (i === tankIndex ? null : t))
+    const next = {
+      ...state,
+      slimes: [...state.slimes, offspring],
+      tanks: newTanks,
     }
     set(next)
     persist(next)
@@ -100,9 +169,22 @@ export const useGameStore = create<GameState>((set, get) => ({
     persist(next)
   },
 
+  buyTankUpgrade() {
+    const { gold, tankCount, tanks } = get()
+    if (gold < TANK_UPGRADE_COST) return
+    const next = {
+      ...get(),
+      gold: gold - TANK_UPGRADE_COST,
+      tankCount: tankCount + 1,
+      tanks: [...tanks, null],
+    }
+    set(next)
+    persist(next)
+  },
+
   assignToDisplay(slimeId: string, slotIndex: number) {
     const { slimes, displaySlots } = get()
-    if (displaySlots[slotIndex] !== null) return // guard: slot already occupied
+    if (displaySlots[slotIndex] !== null) return
     const slime = slimes.find((s) => s.id === slimeId)
     if (!slime) return
     const newSlots = displaySlots.map((s, i) =>
@@ -136,29 +218,33 @@ export const useGameStore = create<GameState>((set, get) => ({
     let gold = saved.gold
 
     // Credit accumulated display room income (idle game style)
-    const displaySlots: Array<DisplaySlot | null> = (saved.displaySlots ?? Array(DISPLAY_SLOT_COUNT).fill(null)).map(
-      (slot) => {
-        if (!slot) return null
-        const elapsedSec = (now - slot.assignedAt) / 1000
-        const rate = slot.slimeData.colorTier * slot.slimeData.shapeTier * DISPLAY_BASE_RATE
-        gold += elapsedSec * rate
-        return {
-          slimeId: slot.slimeId,
-          assignedAt: slot.assignedAt,
-          slime: {
-            ...slot.slimeData,
-            color: slot.slimeData.color as import('../types').SlimeColor,
-            shape: slot.slimeData.shape as import('../types').SlimeShape,
-            variance: 0,
-          },
-        }
-      },
-    )
+    const displaySlots: Array<DisplaySlot | null> = (
+      saved.displaySlots ?? Array(DISPLAY_SLOT_COUNT).fill(null)
+    ).map((slot) => {
+      if (!slot) return null
+      const elapsedSec = (now - slot.assignedAt) / 1000
+      const rate = slot.slimeData.colorTier * slot.slimeData.shapeTier * DISPLAY_BASE_RATE
+      gold += elapsedSec * rate
+      return {
+        slimeId: slot.slimeId,
+        assignedAt: slot.assignedAt,
+        slime: {
+          ...slot.slimeData,
+          color: slot.slimeData.color as import('../types').SlimeColor,
+          shape: slot.slimeData.shape as import('../types').SlimeShape,
+          variance: 0,
+        },
+      }
+    })
 
-    const baseState: Omit<GameState, 'startHatch' | 'resolveHatch' | 'sellSlime' | 'buyPenUpgrade' | 'assignToDisplay' | 'unassignFromDisplay' | 'loadGame'> = {
+    const tanks: Array<TankSlot | null> = saved.tanks ?? [null]
+    const tankCount = saved.tankCount ?? 1
+
+    set({
       gold: Math.floor(gold),
       penCapacity: saved.penCapacity,
-      hatchStartedAt: saved.hatchStartedAt ?? null,
+      tanks,
+      tankCount,
       displaySlots,
       slimes: saved.slimes.map((s) => ({
         ...s,
@@ -166,13 +252,14 @@ export const useGameStore = create<GameState>((set, get) => ({
         shape: s.shape as import('../types').SlimeShape,
         variance: 0,
       })),
-    }
+    })
 
-    set(baseState)
-
-    // Auto-resolve an expired incubation
-    if (baseState.hatchStartedAt !== null && now - baseState.hatchStartedAt >= HATCH_DURATION_MS) {
-      get().resolveHatch()
-    }
+    // Auto-resolve any expired tanks
+    tanks.forEach((slot, i) => {
+      if (slot && now - slot.startedAt >= HATCH_DURATION_MS) {
+        if (slot.type === 'hatch') get().resolveHatch(i)
+        else if (slot.type === 'breed') get().resolveBreed(i)
+      }
+    })
   },
 }))
