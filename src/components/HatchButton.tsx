@@ -1,15 +1,21 @@
 import { useGameStore } from '../store/gameStore'
+import { IncubationProgress } from './IncubationProgress'
 
 export function HatchButton() {
-  const hatchSlime = useGameStore((s) => s.hatchSlime)
+  const startHatch = useGameStore((s) => s.startHatch)
   const slimes = useGameStore((s) => s.slimes)
   const penCapacity = useGameStore((s) => s.penCapacity)
+  const hatchStartedAt = useGameStore((s) => s.hatchStartedAt)
   const isFull = slimes.length >= penCapacity
+
+  if (hatchStartedAt !== null) {
+    return <IncubationProgress />
+  }
 
   return (
     <section className="bg-surface-container-high p-6 flex flex-col items-center">
       <button
-        onClick={hatchSlime}
+        onClick={startHatch}
         disabled={isFull}
         className={`w-full font-headline font-black text-lg py-5 uppercase tracking-[0.2em] transition-none ${
           isFull
