@@ -93,8 +93,10 @@ On load, iterate all tank slots. For each:
 Implemented in `src/utils/breedSlimes.ts` as a **pure function**:
 
 ```ts
-export function breedSlimes(host: Slime, donor: Slime): Slime
+export function breedSlimes(host: Slime, donor: PersistedSlime): Slime
 ```
+
+`donor` is typed as `PersistedSlime` because the donor snapshot is stored without `variance` (same as all persisted slimes). Only the host needs to be a full `Slime` (looked up live from `slimes[]`). The function only reads `color`, `colorTier`, `shape`, `shapeTier` from both parents — `variance` is not inherited.
 
 For each trait dimension (`color`/`colorTier` pair, `shape`/`shapeTier` pair):
 - Roll 60/40: 60% → inherit from host, 40% → inherit from donor
