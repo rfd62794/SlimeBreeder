@@ -200,3 +200,80 @@ describe('loadGame — display rooms', () => {
     expect(useGameStore.getState().gold).toBeCloseTo(expectedGold, 0)
   })
 })
+
+// ── Breeding ──────────────────────────────────────────────────
+
+describe('startBreed', () => {
+  it('removes donor from slimes[] immediately', () => {
+    // Hatch two slimes
+    useGameStore.getState().startHatch(); useGameStore.getState().resolveHatch(0)
+    useGameStore.getState().startHatch(); useGameStore.getState().resolveHatch(0)
+    const [host, donor] = useGameStore.getState().slimes
+    useGameStore.getState().startBreed(host.id, donor.id)
+    expect(useGameStore.getState().slimes).toHaveLength(1)
+    expect(useGameStore.getState().slimes[0].id).toBe(host.id)
+  })
+
+  it('occupies the first free tank as a breed slot with donorSnapshot', () => {
+    useGameStore.getState().startHatch(); useGameStore.getState().resolveHatch(0)
+    useGameStore.getState().startHatch(); useGameStore.getState().resolveHatch(0)
+    const [host, donor] = useGameStore.getState().slimes
+    useGameStore.getState().startBreed(host.id, donor.id)
+    const tank = useGameStore.getState().tanks[0]
+    expect(tank?.type).toBe('breed')
+    expect((tank as any)?.hostId).toBe(host.id)
+    expect((tank as any)?.donorSnapshot?.id).toBe(donor.id)
+  })
+
+  it('is a no-op when no free tank exists', () => {
+    useGameStore.getState().startHatch(); useGameStore.getState().resolveHatch(0)
+    useGameStore.getState().startHatch(); useGameStore.getState().resolveHatch(0)
+    const [host, donor] = useGameStore.getState().slimes
+    // occupy the only tank with a new hatch
+    useGameStore.getState().startHatch()
+    // now tank[0] is occupied by hatch, so startBreed should be blocked
+    useGameStore.getState().startBreed(host.id, donor.id)
+    // breed should be blocked — tank already has hatch
+    expect(useGameStore.getState().tanks[0]?.type).toBe('hatch')
+    expect(useGameStore.getState().slimes).toHaveLength(2)
+  })
+})
+
+describe('resolveBreed', () => {
+  it('adds offspring to slimes[] and clears the breed tank', () => {
+    useGameStore.getState().startHatch(); useGameStore.getState().resolveHatch(0)
+    useGameStore.getState().startHatch(); useGameStore.getState().resolveHatch(0)
+    const [host, donor] = useGameStore.getState().slimes
+    useGameStore.getState().startBreed(host.id, donor.id)
+    useGameStore.getState().resolveBreed(0)
+    // host stayed + offspring added = 2
+    expect(useGameStore.getState().slimes).toHaveLength(2)
+    expect(useGameStore.getState().tanks[0]).toBeNull()
+  })
+})
+
+describe('loadGame — breed', () => {
+  it('auto-resolves an expired breed tank on load', async () => {
+    const { db } = await import('../db/db')
+    const expiredAt = Date.now() - 60_000
+    const hostSlime = {
+      id: 'host-1', color: 'Green', shape: 'Blob',
+      colorTier: 1, shapeTier: 1, actualValue: 10, createdAt: 1000,
+    }
+    const donorSnapshot = {
+      id: 'donor-1', color: 'Red', shape: 'Spiked',
+      colorTier: 1, shapeTier: 1, actualValue: 10, createdAt: 2000,
+    }
+    vi.mocked(db.gameState.get).mockResolvedValueOnce({
+      id: 1, gold: 50, penCapacity: 5,
+      slimes: [hostSlime],
+      tanks: [{ type: 'breed', startedAt: expiredAt, hostId: 'host-1', donorSnapshot }],
+      tankCount: 1,
+      displaySlots: [null, null],
+    })
+    await useGameStore.getState().loadGame()
+    // host still present + offspring added
+    expect(useGameStore.getState().slimes).toHaveLength(2)
+    expect(useGameStore.getState().tanks[0]).toBeNull()
+  })
+})
