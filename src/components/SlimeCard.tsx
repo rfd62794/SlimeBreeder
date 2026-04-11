@@ -1,10 +1,6 @@
 import { useGameStore } from '../store/gameStore'
-import {
-  COLOR_CHIP_CLASSES,
-  COLOR_BG_CLASSES,
-  COLOR_GLOW,
-  SHAPE_DESIGNATIONS,
-} from '../types'
+import { COLOR_CHIP_CLASSES, SHAPE_DESIGNATIONS } from '../types'
+import { SlimeVisual } from './SlimeVisual'
 import type { Slime } from '../types'
 
 interface Props {
@@ -16,18 +12,13 @@ export function SlimeCard({ slime }: Props) {
 
   return (
     <div className="bg-surface border-t-2 border-outline-variant/30 flex flex-col group">
-      {/* Color placeholder — replaces the slime image until Phase 2 */}
-      <div
-        className={`h-24 relative overflow-hidden flex items-center justify-center ${COLOR_BG_CLASSES[slime.color]}`}
-        style={{ boxShadow: `inset 0 0 40px ${COLOR_GLOW[slime.color]}` }}
-      >
+      {/* Slime visual area */}
+      <div className="h-24 flex items-center justify-center bg-surface-container-lowest relative">
+        <SlimeVisual color={slime.color} shape={slime.shape} size={80} />
         <span
           className={`absolute top-2 right-2 px-2 py-0.5 text-[10px] font-label font-bold uppercase ${COLOR_CHIP_CLASSES[slime.color]}`}
         >
           {SHAPE_DESIGNATIONS[slime.shape]}
-        </span>
-        <span className="text-[10px] font-label text-on-surface-variant/30 uppercase tracking-widest">
-          BIO_ASSET
         </span>
       </div>
 
