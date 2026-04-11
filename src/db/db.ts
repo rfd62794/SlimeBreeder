@@ -16,12 +16,29 @@ export interface PersistedDisplaySlot {
   slimeData: PersistedSlime
 }
 
+export interface HatchTankSlot {
+  type: 'hatch'
+  startedAt: number
+}
+
+export interface BreedTankSlot {
+  type: 'breed'
+  startedAt: number
+  hostId: string
+  donorSnapshot: PersistedSlime  // full donor genetics captured at startBreed time;
+                                  // donor is removed from pen immediately, so this snapshot
+                                  // is the only source of truth at resolveBreed time
+}
+
+export type TankSlot = HatchTankSlot | BreedTankSlot
+
 export interface PersistedGameState {
   id: number // always 1 — single-row save
   gold: number
   penCapacity: number
   slimes: PersistedSlime[]
-  hatchStartedAt: number | null
+  tanks: Array<TankSlot | null>  // length always equals tankCount; null = empty slot
+  tankCount: number
   displaySlots: Array<PersistedDisplaySlot | null>
 }
 
@@ -38,6 +55,21 @@ class SlimeBreederDB extends Dexie {
         .modify((row) => {
           if (row.hatchStartedAt === undefined) row.hatchStartedAt = null
           if (row.displaySlots === undefined) row.displaySlots = [null, null]
+        }),
+    )
+    this.version(3).stores({ gameState: 'id' }).upgrade((tx) =>
+      tx
+        .table('gameState')
+        .toCollection()
+        .modify((row) => {
+          // Migrate hatchStartedAt (v2) → tanks[0] (v3)
+          const slot: TankSlot | null =
+            row.hatchStartedAt != null
+              ? { type: 'hatch', startedAt: row.hatchStartedAt }
+              : null
+          row.tanks = [slot]
+          row.tankCount = 1
+          delete row.hatchStartedAt
         }),
     )
   }

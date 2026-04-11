@@ -14,3 +14,12 @@ export const TIER_WEIGHTS: { tier: number; weight: number }[] = [
   { tier: 2, weight: 30 },
   { tier: 3, weight: 10 },
 ]
+
+/** Gold cost to add a new incubation tank slot (Roost from GDD §4.4). */
+export const TANK_UPGRADE_COST = 50
+
+/** Probability (0–1) that one trait tier mutates +1 after breeding. */
+export const BREED_MUTATION_CHANCE = 0.15
+
+/** Probability (0–1) that each trait inherits from the host vs. donor. */
+export const BREED_HOST_WEIGHT = 0.60
