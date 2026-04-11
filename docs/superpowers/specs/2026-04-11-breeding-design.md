@@ -44,7 +44,9 @@ export interface BreedTankSlot {
   type: 'breed'
   startedAt: number
   hostId: string
-  donorId: string
+  donorSnapshot: PersistedSlime   // full donor genetics captured at startBreed time;
+                                  // donor is removed from pen immediately, so the snapshot
+                                  // is the only source of truth at resolveBreed time
 }
 
 export type TankSlot = HatchTankSlot | BreedTankSlot
@@ -56,8 +58,8 @@ Remove: `hatchStartedAt: number | null`
 
 Add:
 ```ts
-tanks: TankSlot[]   // length always equals tankCount; null entries = empty slots
-tankCount: number   // starts at 1; upgradable via buyTankUpgrade()
+tanks: Array<TankSlot | null>   // length always equals tankCount; null = empty slot
+tankCount: number               // starts at 1; upgradable via buyTankUpgrade()
 ```
 
 `tanks` is stored as a sparse array: index = slot number, value = TankSlot or null.
@@ -68,8 +70,8 @@ tankCount: number   // starts at 1; upgradable via buyTankUpgrade()
 |---|---|---|
 | `startHatch()` | `(tankIndex?: number) → void` | Uses first free tank if no index given. No-op if all tanks occupied or pen full. |
 | `resolveHatch(tankIndex: number)` | `→ void` | Idempotent guard remains. Adds slime, clears tank slot. |
-| `startBreed(hostId, donorId)` | `(hostId: string, donorId: string) → void` | Validates: both slimes in pen, at least one free tank. Removes donor from pen. Occupies first free tank slot as `BreedTankSlot`. |
-| `resolveBreed(tankIndex: number)` | `→ void` | Calls `breedSlimes(host, donor)`, adds offspring to pen, clears tank slot. Host remains in pen. |
+| `startBreed(hostId, donorId)` | `(hostId: string, donorId: string) → void` | Validates: both slimes in pen, at least one free tank. Removes donor from pen immediately. Stores donor's full genetics as `donorSnapshot` on the `BreedTankSlot`. Occupies first free tank slot. |
+| `resolveBreed(tankIndex: number)` | `→ void` | Reads `hostId` from tank slot (looks up host in `slimes[]`), reads `donorSnapshot` from tank slot. Calls `breedSlimes(host, donorSnapshot)`, adds offspring to pen, clears tank slot. Host remains in pen. |
 | `buyTankUpgrade()` | `→ void` | Costs `TANK_UPGRADE_COST` gold. Increments `tankCount`, appends null to `tanks`. |
 
 ### 3.4 Persistence
@@ -119,7 +121,8 @@ Adding `'pattern'` or `'accessory'` later is additive — no restructuring of th
 ### 4.4 Offspring Metadata
 
 - New `id` via `crypto.randomUUID()`
-- `actualValue` computed via `computeBaseValue(colorTier, shapeTier, variance)` where variance is freshly rolled ±10%
+- `variance` freshly rolled in `[-0.1, 0.1]` (same as `generateSlime`)
+- `actualValue` computed via `computeBaseValue(colorTier, shapeTier, variance)`
 - `createdAt: Date.now()`
 
 ---
@@ -160,7 +163,7 @@ BREEDING_LAB
 
 | State | Display |
 |---|---|
-| Empty | Two buttons: HATCH and BREED (BREED scrolls to / arms the Breeding Panel) |
+| Empty | Two buttons: HATCH (starts a wild hatch immediately in this tank) and BREED (scrolls the page to the Breeding Panel below; does not start a breed — the Breeding Panel's START BREED button does that, using the first free tank) |
 | Hatch in progress | Progress bar + countdown + `HATCH_IN_PROGRESS` label |
 | Breed in progress | Progress bar + countdown + `BREED_IN_PROGRESS` label + small host/donor SlimeVisual thumbnails |
 
