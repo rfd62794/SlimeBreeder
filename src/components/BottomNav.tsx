@@ -1,26 +1,36 @@
-const NAV_ITEMS = [
-  { icon: 'database', label: 'CHAMBER', active: true },
-  { icon: 'science',  label: 'MUTATE',  active: false },
-  { icon: 'token',    label: 'MARKET',  active: false },
-  { icon: 'settings', label: 'SYSTEM',  active: false },
+type Tab = 'chamber' | 'mutate'
+
+interface Props {
+  activeTab: Tab
+  onTabChange: (tab: Tab) => void
+}
+
+const NAV_ITEMS: Array<{ icon: string; label: string; tab: Tab | null }> = [
+  { icon: 'database', label: 'CHAMBER', tab: 'chamber' },
+  { icon: 'science',  label: 'MUTATE',  tab: 'mutate' },
+  { icon: 'token',    label: 'MARKET',  tab: null },   // not yet implemented
+  { icon: 'settings', label: 'SYSTEM',  tab: null },
 ]
 
-export function BottomNav() {
+export function BottomNav({ activeTab, onTabChange }: Props) {
   return (
     <nav className="fixed bottom-0 left-0 w-full h-16 flex justify-around items-stretch bg-surface-container-lowest z-50">
-      {NAV_ITEMS.map(({ icon, label, active }) => (
+      {NAV_ITEMS.map(({ icon, label, tab }) => (
         <button
           key={label}
+          onClick={() => tab && onTabChange(tab)}
+          disabled={tab === null}
           className={`flex flex-col items-center justify-center h-full w-full transition-colors ${
-            active
+            tab === activeTab
               ? 'bg-primary-container text-on-primary-container'
-              : 'text-outline-variant cursor-not-allowed'
+              : tab !== null
+                ? 'text-on-surface-variant hover:bg-surface-container'
+                : 'text-outline-variant cursor-not-allowed'
           }`}
-          disabled={!active}
         >
           <span
             className="material-symbols-outlined text-xl"
-            style={active ? { fontVariationSettings: "'FILL' 1" } : undefined}
+            style={tab === activeTab ? { fontVariationSettings: "'FILL' 1" } : undefined}
           >
             {icon}
           </span>

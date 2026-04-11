@@ -1,0 +1,160 @@
+<style>
+  body { background: #0e0e0e; font-family: 'Space Grotesk', monospace; }
+  @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;700&display=swap');
+
+  .slime-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 16px;
+    margin: 24px 0;
+  }
+
+  .slime-card {
+    background: #1c1b1b;
+    border-top: 2px solid rgba(59,75,55,0.3);
+    padding: 20px;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    transition: background 0.1s;
+  }
+  .slime-card:hover { background: #2a2a2a; }
+  .slime-card.selected { border-top-color: #00ff41; background: #1a2e1a; }
+
+  .slime-label {
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #b9ccb2;
+    font-family: 'Space Grotesk', monospace;
+  }
+
+  .slime-name {
+    font-size: 13px;
+    font-weight: 700;
+    color: #ebffe2;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'Space Grotesk', monospace;
+  }
+
+  .chip {
+    font-size: 10px;
+    padding: 2px 8px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-family: 'Space Grotesk', monospace;
+  }
+  .chip-green { background: #00ff41; color: #007117; }
+  .chip-cyan  { background: #00e3fd; color: #00616d; }
+  .chip-red   { background: #93000a; color: #ffdad6; }
+
+  .color-row {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  h2 { color: #ebffe2; font-family: 'Space Grotesk', monospace; font-size: 18px; letter-spacing: 0.15em; text-transform: uppercase; margin: 0 0 4px 0; }
+  p.sub { color: #b9ccb2; font-size: 13px; margin: 0 0 24px 0; }
+</style>
+
+<h2>Visual Slime — Shape Geometry</h2>
+<p class="sub">Three approaches to procedural CSS/SVG slime rendering. Each is swappable for hand-drawn sprites later. Click to select.</p>
+
+<div class="slime-grid">
+
+  <!-- Option A: Blob — smooth organic circle with slight squish -->
+  <div class="slime-card" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="slime-label">SPHEROID_v1</div>
+    <svg width="100" height="100" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="blobGrad" cx="40%" cy="35%" r="60%">
+          <stop offset="0%" stop-color="#72ff70" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#003907" stop-opacity="1"/>
+        </radialGradient>
+      </defs>
+      <!-- Blob: organic bezier — no true circle, slight squish -->
+      <path d="M50,15 C70,12 88,28 90,50 C92,72 75,88 50,88 C25,88 10,72 10,50 C10,28 30,18 50,15 Z"
+            fill="url(#blobGrad)"
+            style="filter: drop-shadow(0 0 8px rgba(0,255,65,0.3))"/>
+      <!-- Highlight -->
+      <ellipse cx="38" cy="32" rx="10" ry="7" fill="rgba(255,255,255,0.15)" transform="rotate(-20,38,32)"/>
+    </svg>
+    <div class="slime-name">Blob</div>
+    <div style="font-size:11px;color:#b9ccb2;text-align:center;line-height:1.4">Smooth organic path.<br>Radial gradient fill.<br>Subtle glow shadow.</div>
+    <div class="color-row">
+      <span class="chip chip-green">GREEN</span>
+      <span class="chip chip-cyan">BLUE</span>
+      <span class="chip chip-red">RED</span>
+    </div>
+  </div>
+
+  <!-- Option B: Spiked — geometric star/shard with jagged points -->
+  <div class="slime-card" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="slime-label">CONICAL_v2</div>
+    <svg width="100" height="100" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="spikeGrad" cx="40%" cy="35%" r="60%">
+          <stop offset="0%" stop-color="#72ff70" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#003907" stop-opacity="1"/>
+        </radialGradient>
+      </defs>
+      <!-- Spiked: star polygon with organic inner mass -->
+      <path d="M50,10 L58,38 L88,38 L64,56 L72,84 L50,68 L28,84 L36,56 L12,38 L42,38 Z"
+            fill="url(#spikeGrad)"
+            style="filter: drop-shadow(0 0 8px rgba(0,255,65,0.3))"/>
+      <!-- Inner core -->
+      <circle cx="50" cy="50" r="16" fill="rgba(114,255,112,0.2)"/>
+      <!-- Highlight -->
+      <ellipse cx="40" cy="35" rx="8" ry="5" fill="rgba(255,255,255,0.15)" transform="rotate(-15,40,35)"/>
+    </svg>
+    <div class="slime-name">Spiked</div>
+    <div style="font-size:11px;color:#b9ccb2;text-align:center;line-height:1.4">Star polygon path.<br>Sharp geometric points.<br>Softer inner mass.</div>
+    <div class="color-row">
+      <span class="chip chip-green">GREEN</span>
+      <span class="chip chip-cyan">BLUE</span>
+      <span class="chip chip-red">RED</span>
+    </div>
+  </div>
+
+  <!-- Option C: Elongated — tall oval with drip/stretch distortion -->
+  <div class="slime-card" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="slime-label">ELONGATED_v3</div>
+    <svg width="100" height="100" viewBox="0 0 100 100">
+      <defs>
+        <radialGradient id="longGrad" cx="40%" cy="30%" r="60%">
+          <stop offset="0%" stop-color="#72ff70" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#003907" stop-opacity="1"/>
+        </radialGradient>
+      </defs>
+      <!-- Elongated: tall narrow oval with drip at bottom -->
+      <path d="M50,8 C65,8 80,22 80,45 C80,65 68,82 55,90 C52,92 48,92 45,90 C32,82 20,65 20,45 C20,22 35,8 50,8 Z"
+            fill="url(#longGrad)"
+            style="filter: drop-shadow(0 0 8px rgba(0,255,65,0.3))"/>
+      <!-- Drip detail -->
+      <path d="M50,85 C50,85 48,90 50,94 C52,90 50,85 50,85 Z"
+            fill="#00e639" opacity="0.6"/>
+      <!-- Highlight -->
+      <ellipse cx="40" cy="28" rx="8" ry="5" fill="rgba(255,255,255,0.15)" transform="rotate(-15,40,28)"/>
+    </svg>
+    <div class="slime-name">Elongated</div>
+    <div style="font-size:11px;color:#b9ccb2;text-align:center;line-height:1.4">Tall narrow oval.<br>Drip accent at base.<br>Stretched proportions.</div>
+    <div class="color-row">
+      <span class="chip chip-green">GREEN</span>
+      <span class="chip chip-cyan">BLUE</span>
+      <span class="chip chip-red">RED</span>
+    </div>
+  </div>
+
+</div>
+
+<p style="color:#b9ccb2;font-size:12px;margin-top:8px">
+  All three use the same <code style="background:#2a2a2a;padding:2px 6px;color:#ebffe2">SlimeVisual</code> component interface — color and shape as props, SVG paths swappable for sprites later. The green gradient shown here is the Green slime; Red and Blue variants use the same geometry with color-matched gradients.
+</p>
