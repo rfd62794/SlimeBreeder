@@ -12,6 +12,12 @@ interface Props {
 
 export function SlimePicker({ onSelect, onClose, excludeIds = [], title = 'SELECT_SPECIMEN' }: Props) {
   const slimes = useGameStore((s) => s.slimes).filter((s) => !excludeIds.includes(s.id))
+  const displaySlots = useGameStore((s) => s.displaySlots)
+  const displayedSlimes = displaySlots
+    .filter((slot) => slot !== null)
+    .map((slot) => slot.slime)
+
+  const hasAny = slimes.length > 0 || displayedSlimes.length > 0
 
   return (
     <div
@@ -19,19 +25,20 @@ export function SlimePicker({ onSelect, onClose, excludeIds = [], title = 'SELEC
       onClick={onClose}
     >
       <div
-        className="w-full max-w-lg bg-surface-container-high pb-8"
+        className="w-full max-w-lg bg-surface-container-high pb-8 max-h-[70vh] flex flex-col"
         onClick={(e) => e.stopPropagation()}
       >
-        <p className="text-[10px] font-label text-on-surface-variant uppercase tracking-widest p-4 border-b border-outline-variant/20">
+        <p className="text-[10px] font-label text-on-surface-variant uppercase tracking-widest p-4 border-b border-outline-variant/20 flex-shrink-0">
           {title}
         </p>
 
-        {slimes.length === 0 ? (
+        {!hasAny ? (
           <p className="text-[11px] font-label text-on-surface-variant/50 uppercase tracking-widest p-6 text-center">
-            No specimens available.
+            No specimens in facility.
           </p>
         ) : (
-          <ul className="divide-y divide-outline-variant/10">
+          <ul className="divide-y divide-outline-variant/10 overflow-y-auto">
+            {/* Available slimes — selectable */}
             {slimes.map((slime) => (
               <li key={slime.id}>
                 <button
@@ -55,9 +62,34 @@ export function SlimePicker({ onSelect, onClose, excludeIds = [], title = 'SELEC
                 </button>
               </li>
             ))}
+
+            {/* Displayed slimes — visible but grayed out */}
+            {displayedSlimes.map((slime) => (
+              <li key={slime.id}>
+                <div className="w-full flex items-center gap-3 p-3 opacity-35 cursor-not-allowed">
+                  <div className="relative">
+                    <SlimeVisual color={slime.color} shape={slime.shape} size={40} />
+                  </div>
+                  <div className="flex-grow">
+                    <span
+                      className={`text-[10px] font-label font-bold uppercase px-2 py-0.5 ${COLOR_CHIP_CLASSES[slime.color]}`}
+                    >
+                      {COLOR_DESIGNATIONS[slime.color]}
+                    </span>
+                    <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">
+                      {SHAPE_DESIGNATIONS[slime.shape]}
+                    </p>
+                  </div>
+                  <span className="text-[9px] font-label font-bold uppercase tracking-widest text-on-surface-variant border border-outline-variant/40 px-2 py-0.5">
+                    ON_DISPLAY
+                  </span>
+                </div>
+              </li>
+            ))}
           </ul>
         )}
       </div>
     </div>
   )
 }
+
