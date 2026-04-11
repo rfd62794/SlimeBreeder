@@ -9,9 +9,10 @@ interface Props {
   onClose: () => void
   excludeIds?: string[]
   title?: string
+  isValid?: (slime: Slime) => boolean
 }
 
-export function SlimePicker({ onSelect, onClose, excludeIds = [], title = 'SELECT_SPECIMEN' }: Props) {
+export function SlimePicker({ onSelect, onClose, excludeIds = [], title = 'SELECT_SPECIMEN', isValid = () => true }: Props) {
   const slimes = useGameStore((s) => s.slimes).filter((s) => !excludeIds.includes(s.id))
   const displaySlots = useGameStore((s) => s.displaySlots)
   const displayedSlimes = displaySlots
@@ -42,28 +43,49 @@ export function SlimePicker({ onSelect, onClose, excludeIds = [], title = 'SELEC
             {slimes.map((slime) => {
               const colorDef = COLOR_DEFS[slime.color as SlimeColor] ?? COLOR_DEFS.Red
               const shapeDef = SHAPE_DEFS[slime.shape as SlimeShape] ?? SHAPE_DEFS.Circle
+              const valid = isValid(slime)
               return (
                 <li key={slime.id}>
-                  <button
-                    onClick={() => { onSelect(slime); onClose() }}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-surface-container-highest transition-none text-left"
-                  >
-                    <SlimeVisual color={slime.color} shape={slime.shape} size={40} />
-                    <div className="flex-grow">
-                      <span
-                        className="text-[10px] font-label font-bold uppercase px-2 py-0.5"
-                        style={{ background: colorDef.chipBg, color: colorDef.chipText }}
-                      >
-                        {colorDef.designation}
+                  {valid ? (
+                    <button
+                      onClick={() => { onSelect(slime); onClose() }}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-surface-container-highest transition-none text-left"
+                    >
+                      <SlimeVisual color={slime.color} shape={slime.shape} size={40} />
+                      <div className="flex-grow">
+                        <span
+                          className="text-[10px] font-label font-bold uppercase px-2 py-0.5"
+                          style={{ background: colorDef.chipBg, color: colorDef.chipText }}
+                        >
+                          {colorDef.designation}
+                        </span>
+                        <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">
+                          {shapeDef.designation}
+                        </p>
+                      </div>
+                      <span className="text-sm font-headline font-bold text-primary">
+                        {slime.actualValue}G
                       </span>
-                      <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">
-                        {shapeDef.designation}
-                      </p>
+                    </button>
+                  ) : (
+                    <div className="w-full flex items-center gap-3 p-3 opacity-35 cursor-not-allowed">
+                      <SlimeVisual color={slime.color} shape={slime.shape} size={40} />
+                      <div className="flex-grow">
+                        <span
+                          className="text-[10px] font-label font-bold uppercase px-2 py-0.5"
+                          style={{ background: colorDef.chipBg, color: colorDef.chipText }}
+                        >
+                          {colorDef.designation}
+                        </span>
+                        <p className="text-[10px] text-on-surface-variant uppercase tracking-wider mt-1">
+                          {shapeDef.designation}
+                        </p>
+                      </div>
+                      <span className="text-[9px] font-label font-bold uppercase tracking-widest text-on-surface-variant border border-outline-variant/40 px-2 py-0.5">
+                        INELIGIBLE
+                      </span>
                     </div>
-                    <span className="text-sm font-headline font-bold text-primary">
-                      {slime.actualValue}G
-                    </span>
-                  </button>
+                  )}
                 </li>
               )
             })}

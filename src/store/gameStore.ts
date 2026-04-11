@@ -2,10 +2,11 @@ import { create } from 'zustand'
 import { db } from '../db/db'
 import { generateSlime } from '../utils/slimeGenerator'
 import { breedSlimes } from '../utils/breedSlimes'
+import { generateWandererRequest } from '../utils/requestGenerator'
 import { getColorTier, getShapeTier, STARTING_COLORS, STARTING_SHAPES } from '../data/traitDefs'
 import type { SlimeColor, SlimeShape } from '../data/traitDefs'
 import type { Slime, DisplaySlot } from '../types'
-import type { TankSlot } from '../db/db'
+import type { TankSlot, WandererRequest } from '../db/db'
 import {
   PEN_UPGRADE_COST,
   HATCH_DURATION_MS,
@@ -14,6 +15,7 @@ import {
   TANK_UPGRADE_COST,
   DISCOVERY_REGENT_REWARDS,
   REGENT_LOCK_COST,
+  WANDERER_REQUEST_MAX,
 } from '../config'
 
 interface GameState {
@@ -26,6 +28,7 @@ interface GameState {
   discoveredColors: SlimeColor[]
   discoveredShapes: SlimeShape[]
   regents: number
+  wandererRequests: WandererRequest[]
 
   startHatch: (tankIndex?: number, lockedColor?: SlimeColor, lockedShape?: SlimeShape) => void
   resolveHatch: (tankIndex: number) => void
@@ -38,6 +41,10 @@ interface GameState {
   unassignFromDisplay: (slotIndex: number) => void
   tickDisplayGold: () => void
   loadGame: () => Promise<void>
+
+  generateRequests: () => void
+  fulfillRequest: (requestId: string, slimeId: string) => void
+  dismissRequest: (requestId: string) => void
 }
 
 function snapshotSlime(s: Slime) {
@@ -52,7 +59,7 @@ function snapshotSlime(s: Slime) {
 }
 
 async function persist(
-  state: Pick<GameState, 'gold' | 'penCapacity' | 'slimes' | 'tanks' | 'tankCount' | 'displaySlots'>,
+  state: Pick<GameState, 'gold' | 'penCapacity' | 'slimes' | 'tanks' | 'tankCount' | 'displaySlots' | 'wandererRequests'>,
 ) {
   await db.gameState.put({
     id: 1,
@@ -70,6 +77,7 @@ async function persist(
           }
         : null,
     ),
+    wandererRequests: state.wandererRequests,
   })
 }
 
@@ -94,6 +102,7 @@ export const useGameStore = create<GameState>((set, get) => ({
   discoveredColors: [...STARTING_COLORS],
   discoveredShapes: [...STARTING_SHAPES],
   regents: 0,
+  wandererRequests: [],
 
   startHatch(tankIndex?: number, lockedColor?: SlimeColor, lockedShape?: SlimeShape) {
     const state = get()
@@ -374,5 +383,75 @@ export const useGameStore = create<GameState>((set, get) => ({
         }
       }
     })
+
+    // Seed requests if they don't exist
+    if (saved.wandererRequests && saved.wandererRequests.length > 0) {
+      set({ wandererRequests: saved.wandererRequests })
+    } else {
+      get().generateRequests()
+    }
   },
+
+  generateRequests() {
+    const state = get()
+    const { discoveredColors, discoveredShapes, wandererRequests } = state
+    if (wandererRequests.length >= WANDERER_REQUEST_MAX) return
+    if (discoveredColors.length === 0 || discoveredShapes.length === 0) return
+
+    const newReqs = [...wandererRequests]
+    while (newReqs.length < WANDERER_REQUEST_MAX) {
+      newReqs.push(generateWandererRequest(discoveredColors, discoveredShapes))
+    }
+    
+    const next = { ...state, wandererRequests: newReqs }
+    set(next)
+    persist(next)
+  },
+
+  fulfillRequest(requestId: string, slimeId: string) {
+    const state = get()
+    const { slimes, wandererRequests, gold } = state
+    
+    const request = wandererRequests.find(r => r.id === requestId)
+    const slime = slimes.find(s => s.id === slimeId)
+    if (!request || !slime) return
+
+    // Verify it matches
+    if (request.targetColor && request.targetColor !== slime.color) return
+    if (request.targetShape && request.targetShape !== slime.shape) return
+
+    const nextSlimes = slimes.filter(s => s.id !== slimeId)
+    const nextRequests = wandererRequests.filter(r => r.id !== requestId)
+
+    // Automatically regenerate
+    if (nextRequests.length < WANDERER_REQUEST_MAX) {
+      nextRequests.push(generateWandererRequest(state.discoveredColors, state.discoveredShapes))
+    }
+
+    const next = {
+      ...state,
+      slimes: nextSlimes,
+      wandererRequests: nextRequests,
+      gold: gold + request.rewardGold
+    }
+    
+    set(next)
+    persist(next)
+  },
+
+  dismissRequest(requestId: string) {
+    const state = get()
+    const { wandererRequests, discoveredColors, discoveredShapes } = state
+    if (discoveredColors.length === 0 || discoveredShapes.length === 0) return
+
+    const nextRequests = wandererRequests.filter(r => r.id !== requestId)
+    // Automatically regenerate to max immediately
+    while (nextRequests.length < WANDERER_REQUEST_MAX) {
+      nextRequests.push(generateWandererRequest(discoveredColors, discoveredShapes))
+    }
+
+    const next = { ...state, wandererRequests: nextRequests }
+    set(next)
+    persist(next)
+  }
 }))

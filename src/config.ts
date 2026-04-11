@@ -24,10 +24,17 @@ export const DISCOVERY_REGENT_REWARDS: Record<number, number> = {
   4: 40,
 }
 
-/** Regent cost to lock a trait onto a hatching egg, by tier. */
 export const REGENT_LOCK_COST: Record<number, number> = {
   1: 2,
   2: 5,
   3: 12,
   4: 25,
 }
+
+// ── Wanderer Requests ─────────────────────────────────────────
+
+/** Maximum number of active wanderer requests available at any time. */
+export const WANDERER_REQUEST_MAX = 3
+
+/** Multiplier applied to a Slime's base gold value when fulfilled via request. */
+export const WANDERER_PREMIUM_MULTI = 3.0

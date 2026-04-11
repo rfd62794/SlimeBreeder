@@ -39,6 +39,14 @@ export interface PersistedDiscovery {
   regents: number
 }
 
+export interface WandererRequest {
+  id: string
+  targetColor: string | null
+  targetShape: string | null
+  rewardGold: number
+  createdAt: number
+}
+
 export interface PersistedGameState {
   id: number // always 1 — single-row save
   gold: number
@@ -47,6 +55,7 @@ export interface PersistedGameState {
   tanks: Array<TankSlot | null>
   tankCount: number
   displaySlots: Array<PersistedDisplaySlot | null>
+  wandererRequests?: WandererRequest[]
 }
 
 class SlimeBreederDB extends Dexie {
@@ -130,6 +139,15 @@ class SlimeBreederDB extends Dexie {
         colors: [...discoveredColors],
         shapes: [...discoveredShapes],
         regents: 0,
+      })
+    })
+
+    // v5: Add wandererRequests to gameState
+    this.version(5).stores({ gameState: 'id', discovery: 'id' }).upgrade((tx) => {
+      return tx.table('gameState').toCollection().modify((row) => {
+        if (!row.wandererRequests) {
+          row.wandererRequests = []
+        }
       })
     })
   }

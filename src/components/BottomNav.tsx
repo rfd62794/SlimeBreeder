@@ -1,4 +1,4 @@
-type Tab = 'chamber' | 'mutate' | 'codex'
+type Tab = 'chamber' | 'mutate' | 'codex' | 'market'
 
 interface Props {
   activeTab: Tab
@@ -9,7 +9,7 @@ const NAV_ITEMS: Array<{ icon: string; label: string; tab: Tab | null }> = [
   { icon: 'database', label: 'CHAMBER', tab: 'chamber' },
   { icon: 'science',  label: 'MUTATE',  tab: 'mutate' },
   { icon: 'menu_book', label: 'CODEX',  tab: 'codex' },
-  { icon: 'settings', label: 'SYSTEM',  tab: null },
+  { icon: 'storefront', label: 'MARKET',  tab: 'market' },
 ]
 
 export function BottomNav({ activeTab, onTabChange }: Props) {

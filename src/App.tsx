@@ -8,8 +8,9 @@ import { ExpandFacility } from './components/ExpandFacility'
 import { BottomNav } from './components/BottomNav'
 import { MutatePage } from './components/MutatePage'
 import { DiscoveryPage } from './components/DiscoveryPage'
+import { MarketPage } from './components/MarketPage'
 
-type Tab = 'chamber' | 'mutate' | 'codex'
+type Tab = 'chamber' | 'mutate' | 'codex' | 'market'
 
 export function App() {
   const [activeTab, setActiveTab] = useState<Tab>('chamber')
@@ -28,6 +29,8 @@ export function App() {
           </>
         ) : activeTab === 'mutate' ? (
           <MutatePage />
+        ) : activeTab === 'market' ? (
+          <MarketPage />
         ) : (
           <DiscoveryPage />
         )}

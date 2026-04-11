@@ -27,6 +27,7 @@ beforeEach(() => {
     discoveredColors: ['Red', 'Yellow', 'Blue'],
     discoveredShapes: ['Circle', 'Square', 'Triangle'],
     regents: 0,
+    wandererRequests: [],
   })
 })
 
