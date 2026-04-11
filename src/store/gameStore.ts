@@ -1,9 +1,8 @@
 import { create } from 'zustand'
 import { db } from '../db/db'
 import { generateSlime } from '../utils/slimeGenerator'
+import { PEN_UPGRADE_COST } from '../config'
 import type { Slime } from '../types'
-
-export const PEN_UPGRADE_COST = 20
 
 interface GameState {
   gold: number

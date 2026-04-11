@@ -1,4 +1,5 @@
-import { useGameStore, PEN_UPGRADE_COST } from '../store/gameStore'
+import { PEN_UPGRADE_COST } from '../config'
+import { useGameStore } from '../store/gameStore'
 
 export function ExpandFacility() {
   const gold = useGameStore((s) => s.gold)
