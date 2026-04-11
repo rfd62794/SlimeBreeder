@@ -46,3 +46,11 @@ export interface Slime {
   actualValue: number
   createdAt: number
 }
+
+// In-memory shape for a filled display slot.
+// Distinct from PersistedDisplaySlot (which embeds slimeData as PersistedSlime).
+export interface DisplaySlot {
+  slimeId: string
+  assignedAt: number  // epoch ms — used for idle income calculation on load
+  slime: Slime        // full in-memory slime; drives rendering and rate calculation
+}
