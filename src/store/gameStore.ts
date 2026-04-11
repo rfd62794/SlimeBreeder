@@ -353,8 +353,17 @@ export const useGameStore = create<GameState>((set, get) => ({
     // Auto-resolve any expired tanks
     tanks.forEach((slot, i) => {
       if (slot && now - slot.startedAt >= HATCH_DURATION_MS) {
-        if (slot.type === 'hatch') get().resolveHatch(i)
-        else if (slot.type === 'breed') get().resolveBreed(i)
+        if (slot.type === 'hatch') {
+          get().resolveHatch(i)
+        } else if (slot.type === 'breed') {
+          // Guard: legacy breed tanks from before hostSnapshot was added
+          if (!('hostSnapshot' in slot) || !slot.hostSnapshot) {
+            const cleanTanks = get().tanks.map((t, j) => (j === i ? null : t))
+            set({ tanks: cleanTanks })
+          } else {
+            get().resolveBreed(i)
+          }
+        }
       }
     })
   },
