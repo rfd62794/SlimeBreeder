@@ -145,13 +145,15 @@ the finding that was inaccurate. And any refused command, verbatim.
 
 | Field | Value |
 |---|---|
-| Status | Approved |
+| Status | In progress |
 | Assigned to | devin |
-| Branch | - |
+| Branch | directive/slimebreeder-auto-missing-roadmap-roadmap |
 | Base branch | - |
+| Base commit | d108a89f2c8590a8cb695718b4012b526daea2ee |
 | Policy | missing-roadmap |
 
 **Status log**
 - 2026-09-22 13:07 · backlog-policy · none → Queued — generated from a missing-roadmap finding authorised in backlog_policy.yaml
 - 2026-09-24 20:04 · devin-overseer (delegated) · Queued → Approved
+- 2026-09-24 22:15 · dispatcher · Approved → In progress — dispatched devin on personal-laptop in C:\GitHub\.worktrees\SlimeBreeder--slimebreeder-auto-missing-roadmap-roadmap; lane=strong; model=default
 <!-- queue:end -->
